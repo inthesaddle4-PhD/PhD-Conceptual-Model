@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CURE Conceptual Model — Interactive v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --dp-lt:#EEEDFE;--dp-bd:#AFA9EC;--dp-dk:#26215C;--dp:#534AB7;
+  --tl-lt:#E1F5EE;--tl-bd:#5DCAA5;--tl-dk:#04342C;--tl:#0F6E56;
+  --cr-lt:#FAECE7;--cr-bd:#F0997B;--cr-dk:#4A1B0C;--cr:#993C1D;
+  --am:#7B5EA7;--am-lt:#F3EFFE;
+  --bg:#F7F6F2;--card:#ffffff;--border:rgba(0,0,0,0.1);
+  --text:#1a1918;--muted:#6b6966;--faint:#a8a5a0;
+  --serif:'DM Serif Display',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --trans:all 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);margin:0}
+
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.header-title{font-family:var(--serif);font-size:17px;color:var(--text)}
+.header-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.arch-bar{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.arch-label{font-size:9px;font-weight:500;color:var(--muted);white-space:nowrap;letter-spacing:0.06em;text-transform:uppercase}
+.arch-btn{font-family:var(--sans);font-size:9.5px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer}
+.arch-btn.active{background:#1a1918;color:#fff;border-color:#1a1918}
+
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 62px)}
+
+/* CONTROLS — redrawn by JS */
+#controls{background:var(--card);border-right:1px solid var(--border);padding:16px 14px;display:flex;flex-direction:column;gap:18px;overflow-y:auto}
+.ctrl-title{font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#a8a5a0;margin-bottom:8px}
+
+/* Town slider */
+.town-labels{display:flex;justify-content:space-between;font-size:10px;font-weight:500;margin-bottom:4px}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;border-radius:3px;outline:none;cursor:pointer;background:linear-gradient(to right,#0F6E56,#7B5EA7,#993C1D)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #1a1918;box-shadow:0 1px 4px rgba(0,0,0,0.2);cursor:pointer}
+.town-desc{font-size:10.5px;line-height:1.55;color:#6b6966;background:#F7F6F2;border-radius:8px;padding:10px;margin-top:8px;min-height:60px}
+
+/* Mechanism boxes */
+.mech-list{display:flex;flex-direction:column;gap:10px}
+.mech-box{border:1px solid rgba(0,0,0,0.1);border-radius:9px;overflow:hidden}
+.mech-head{display:flex;align-items:center;gap:8px;padding:8px 10px}
+.mech-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;flex-shrink:0;background:#F7F6F2;color:#6b6966;border:1px solid rgba(0,0,0,0.1)}
+.mech-name{font-size:10.5px;font-weight:500;color:#1a1918}
+.mech-sub{font-size:9px;color:#a8a5a0;margin-top:1px}
+.mech-btns{display:flex;border-top:1px solid rgba(0,0,0,0.1)}
+.tb{flex:1;padding:6px 4px;font-family:var(--sans);font-size:9px;font-weight:500;border:none;cursor:pointer;color:#6b6966;background:transparent}
+.tb:first-child{border-right:1px solid rgba(0,0,0,0.1)}
+.tb.tp{background:#E1F5EE;color:#04342C}
+.tb.tn{background:#FAECE7;color:#4A1B0C}
+
+/* MAIN */
+.main{padding:20px;display:flex;flex-direction:column;gap:18px;overflow-y:auto}
+.phase-grid{display:grid;grid-template-columns:140px repeat(3,1fr) 140px;gap:10px;align-items:start}
+
+.antecedents{display:flex;flex-direction:column;gap:6px}
+.ant-lbl{font-size:9px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#a8a5a0;margin-bottom:4px}
+.ant-card{background:#EEEDFE;border:1px solid #AFA9EC;border-radius:8px;padding:8px 10px;transition:var(--trans)}
+.ant-card.lit{background:#534AB7;border-color:#26215C}
+.ant-card.lit .ant-title{color:#fff}
+.ant-card.lit .ant-sub{color:rgba(255,255,255,0.75)}
+.ant-title{font-size:10.5px;font-weight:500;color:#26215C}
+.ant-sub{font-size:9px;color:#534AB7;margin-top:2px}
+
+.phase-col{display:flex;flex-direction:column}
+.phase-hdr{border-radius:8px 8px 0 0;padding:8px 12px;text-align:center}
+.phase-hdr h3{font-family:var(--serif);font-size:14px;font-weight:400}
+.ph1 .phase-hdr{background:#EEEDFE;border:1px solid #AFA9EC;border-bottom:none}
+.ph1 .phase-hdr h3{color:#26215C}
+.ph2 .phase-hdr{background:#f0ede8;border:1px solid #ccc;border-bottom:none}
+.ph2 .phase-hdr h3{color:#1a1918}
+.ph3 .phase-hdr{background:#E1F5EE;border:1px solid #5DCAA5;border-bottom:none}
+.ph3 .phase-hdr h3{color:#04342C}
+.phase-item{padding:8px 12px;font-size:10px;line-height:1.45;border-left:1px solid;border-right:1px solid;border-bottom:1px solid;transition:var(--trans)}
+.phase-item:last-child{border-radius:0 0 8px 8px}
+.ph1 .phase-item{border-color:#AFA9EC;color:#26215C}
+.ph1 .phase-item.lit{background:#EEEDFE}
+.ph2 .phase-item{border-color:#ccc;color:#1a1918}
+.ph2 .phase-item.lit{background:#f0ede8}
+.ph3 .phase-item{border-color:#5DCAA5;color:#04342C}
+.ph3 .phase-item.lit{background:#E1F5EE}
+.phase-item strong{display:block;font-size:10.5px;font-weight:500;margin-bottom:2px}
+.phase-item span{font-size:9.5px;opacity:0.8}
+
+.outcomes{display:flex;flex-direction:column;gap:6px}
+.out-lbl{font-size:8px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:#a8a5a0;margin-bottom:2px;margin-top:4px}
+.out-lbl:first-child{margin-top:0}
+.out-card{border-radius:8px;padding:8px 10px;border:1px solid;min-height:40px;transition:var(--trans)}
+.out-i{background:#E1F5EE;border-color:#5DCAA5}
+.out-v{background:#EEEDFE;border-color:#AFA9EC}
+.out-c{background:#FAECE7;border-color:#F0997B}
+.out-title{font-size:10px;font-weight:500;color:#1a1918}
+.out-body{font-size:9.5px;color:#6b6966;margin-top:3px;line-height:1.45}
+
+.rec-banner{background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px}
+.rec-icon{font-size:18px;color:#6b6966}
+.rec-txt{font-size:10px;color:#6b6966;line-height:1.5;flex:1}
+.rec-pill{font-size:10px;font-weight:500;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.rp-pos{background:#E1F5EE;color:#04342C}
+.rp-part{background:#EEEDFE;color:#26215C}
+.rp-neg{background:#FAECE7;color:#4A1B0C}
+
+.town-section{background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:14px}
+.ts-title{font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#a8a5a0;margin-bottom:10px}
+.town-types{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px}
+.tt{border-radius:8px;padding:10px;border:1px solid;opacity:0.35;transition:var(--trans)}
+.tt.active{opacity:1}
+.tt-ad{background:#E1F5EE;border-color:#5DCAA5}
+.tt-mx{background:#F3EFFE;border-color:#C9B8E8}
+.tt-pr{background:#FAECE7;border-color:#F0997B}
+.tt-name{font-size:11px;font-weight:500;margin-bottom:4px}
+.tt-ad .tt-name{color:#04342C}
+.tt-mx .tt-name{color:#4A2D7A}
+.tt-pr .tt-name{color:#4A1B0C}
+.tt-desc{font-size:9px;line-height:1.5;color:#6b6966}
+.town-note{font-size:9px;color:#a8a5a0;font-style:italic;text-align:center}
+
+.mechs-section{background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:14px}
+.ms-title{font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#a8a5a0;margin-bottom:10px}
+.mechs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mc{border-radius:8px;padding:10px;border:1px solid rgba(0,0,0,0.1);transition:var(--trans)}
+.mc.mp{background:#E1F5EE;border-color:#5DCAA5}
+.mc.mn{background:#FAECE7;border-color:#F0997B}
+.mc-num{font-size:9px;font-weight:500;color:#6b6966;margin-bottom:4px}
+.mc-name{font-size:10.5px;font-weight:500;color:#1a1918;margin-bottom:4px}
+.mc-desc{font-size:9px;line-height:1.5;color:#6b6966}
+.mc-res{font-size:8.5px;font-style:italic;color:#a8a5a0;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,0.1)}
+
+.res-section{background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:14px}
+.res-title{font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#a8a5a0;margin-bottom:10px}
+.res-wrap{position:relative;height:28px;border-radius:14px;overflow:hidden;background:#eee;margin-bottom:8px}
+.res-bar{height:100%;border-radius:14px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1),background 0.6s}
+.res-pct{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:500;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.3)}
+.res-labels{display:flex;justify-content:space-between;font-size:9px;color:#6b6966}
+
+.traj-section{background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:14px}
+.traj-title{font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#a8a5a0;margin-bottom:8px}
+.traj-text{font-size:11px;line-height:1.6;color:#1a1918}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">CURE Conceptual Model</div>
+    <div class="header-sub">Spatialised neo-rural entrepreneurial passion — interactive levers with recursive feedback to antecedents</div>
+  </div>
+  <div class="arch-bar">
+    <span class="arch-label">Archetypes:</span>
+    <button class="arch-btn" id="ab-deep"          onclick="loadArchetype('deep',this)">Deep embedding</button>
+    <button class="arch-btn" id="ab-functional"    onclick="loadArchetype('functional',this)">Functional but incomplete</button>
+    <button class="arch-btn" id="ab-eroded"        onclick="loadArchetype('eroded',this)">Passion eroded</button>
+    <button class="arch-btn" id="ab-retrospective" onclick="loadArchetype('retrospective',this)">Retrospective passion</button>
+    <button class="arch-btn"                        onclick="resetAll()">Reset</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div id="controls"></div>
+
+  <div class="main">
+
+    <div class="phase-grid">
+      <div class="antecedents">
+        <div class="ant-lbl">Antecedents</div>
+        <div class="ant-card" id="ant1"><div class="ant-title">Passion for place</div><div class="ant-sub">Pre-cognitive affective pull</div></div>
+        <div class="ant-card" id="ant2"><div class="ant-title">Affective anticipation</div><div class="ant-sub">Symbols crystallise desire</div></div>
+        <div class="ant-card" id="ant3"><div class="ant-title">Imagined rural life</div><div class="ant-sub">Habitus shapes the search</div></div>
+      </div>
+
+      <div class="phase-col ph1">
+        <div class="phase-hdr"><h3>Dreaming</h3></div>
+        <div class="phase-item" id="p1a"><strong>Creative reimagining</strong><span>Passion precedes venture formation</span></div>
+        <div class="phase-item" id="p1b"><strong>Symbolic identity work</strong><span>Rural symbols anchor new self</span></div>
+        <div class="phase-item" id="p1c" style="border-radius:0 0 8px 8px"><strong>Urban-rural balance</strong><span>Bridging ties maintained</span></div>
+      </div>
+
+      <div class="phase-col ph2">
+        <div class="phase-hdr"><h3>Landing</h3></div>
+        <div class="phase-item" id="p2a"><strong>Strategic due diligence</strong><span>Place evaluated before committing</span></div>
+        <div class="phase-item" id="p2b"><strong>Capital translation</strong><span>Urban expertise meets rural field</span></div>
+        <div class="phase-item" id="p2c" style="border-radius:0 0 8px 8px"><strong>Structural constraints</strong><span>Friction of embedding begins</span></div>
+      </div>
+
+      <div class="phase-col ph3">
+        <div class="phase-hdr"><h3>Anchoring</h3></div>
+        <div class="phase-item" id="p3a"><strong>Relational footholds</strong><span>Embedding through contribution</span></div>
+        <div class="phase-item" id="p3b"><strong>Recognition negotiation</strong><span>Power, gatekeeping and belonging</span></div>
+        <div class="phase-item" id="p3c" style="border-radius:0 0 8px 8px"><strong>Contested futures</strong><span>Change vs continuity in place</span></div>
+      </div>
+
+      <div class="outcomes">
+        <div class="out-lbl">Individual</div>
+        <div class="out-card out-i"><div class="out-title" id="oiT">—</div><div class="out-body" id="oiB">Set levers to generate outcome.</div></div>
+        <div class="out-lbl">Venture</div>
+        <div class="out-card out-v"><div class="out-title" id="ovT">—</div><div class="out-body" id="ovB"></div></div>
+        <div class="out-lbl">Community</div>
+        <div class="out-card out-c"><div class="out-title" id="ocT">—</div><div class="out-body" id="ocB"></div></div>
+      </div>
+    </div>
+
+    <div class="rec-banner">
+      <div class="rec-icon">↻</div>
+      <div class="rec-txt" id="recTxt">Set the levers to see how anchoring outcomes feed back to reshape the antecedents in the next cycle.</div>
+      <div id="recPill"></div>
+    </div>
+
+    <div class="town-section">
+      <div class="ts-title">Town Pattern — Mediating Context Across All Phases</div>
+      <div class="town-types">
+        <div class="tt tt-ad" id="tt-ad"><div class="tt-name">Adaptive</div><div class="tt-desc">High absorptive capacity · civic infrastructure supports newcomers · self-reinforcing creative capital · passion sustained</div></div>
+        <div class="tt tt-mx active" id="tt-mx"><div class="tt-name">Mixed</div><div class="tt-desc">Uneven reception · professional access without social belonging · commitment often provisional · passion costly</div></div>
+        <div class="tt tt-pr" id="tt-pr"><div class="tt-name">Protective</div><div class="tt-desc">Low absorptive capacity · lineage-based recognition · doxa resists newcomer contribution · passion eroded</div></div>
+      </div>
+      <div class="town-note">Same entrepreneur · different town pattern → divergent embedding trajectories and passion outcomes</div>
+    </div>
+
+    <div class="mechs-section">
+      <div class="ms-title">Key Mechanisms and Their Effect on the Passion Reservoir</div>
+      <div class="mechs-grid">
+        <div class="mc" id="mc1"><div class="mc-num">① Affective pull</div><div class="mc-name">Passion fires before logic</div><div class="mc-desc">Shapes opportunity perception and place selection throughout all phases</div><div class="mc-res">Reservoir: replenished through landscape encounter and daily rural ritual</div></div>
+        <div class="mc" id="mc2"><div class="mc-num">② Symbolic validation</div><div class="mc-name">Rural symbols confirm identity shift</div><div class="mc-desc">Landscape, animals and rituals do ongoing reservoir work</div><div class="mc-res">Reservoir: replenished through ongoing rural identity confirmation</div></div>
+        <div class="mc" id="mc3"><div class="mc-num">③ Capital translation</div><div class="mc-name">Critical threshold</div><div class="mc-desc">Whether urban expertise finds local traction or stalls at the field boundary</div><div class="mc-res">Reservoir: replenished when capital translates · drained when expertise is dismissed</div></div>
+        <div class="mc" id="mc4"><div class="mc-num">④ Recognition test</div><div class="mc-name">Most consequential lever</div><div class="mc-desc">Community recognition in anchoring phase determines long-term sustainability</div><div class="mc-res">Reservoir: most powerful replenisher or drain · moderated most strongly by town pattern</div></div>
+      </div>
+    </div>
+
+    <div class="res-section">
+      <div class="res-title">Passion Reservoir — The Energy Source of the Model</div>
+      <div class="res-wrap"><div class="res-bar" id="resBar" style="width:50%;background:#aaa"></div><div class="res-pct" id="resPct">50%</div></div>
+      <div class="res-labels"><span>Drained — exit or recalibration</span><span>Replenished — deepened commitment</span></div>
+    </div>
+
+    <div class="traj-section">
+      <div class="traj-title">Trajectory Reading</div>
+      <div class="traj-text" id="trajTxt">Adjust the levers to see how the embedding trajectory changes — or load an archetype above.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+var S = { town: 50, m: {1:null, 2:null, 3:null, 4:null} };
+
+var MECHS = [
+  null,
+  { num:'①', name:'Affective pull',      sub:'Does passion for place fire before rational calculation?', pos:'Strong pull',  neg:'Weak / absent' },
+  { num:'②', name:'Symbolic validation', sub:'Do rural symbols sustain the identity shift through landing?',  pos:'Sustained',   neg:'Eroding'      },
+  { num:'③', name:'Capital translation', sub:'Does urban expertise find local traction in the new field?',   pos:'Translates',  neg:'Blocked'      },
+  { num:'④', name:'Recognition test',    sub:"Does the community recognise and validate the CURE's contribution?", pos:'Recognised', neg:'Gatekept' }
+];
+
+var ARCHETYPES = {
+  deep:          { town:10, m:{1:'pos',2:'pos',3:'pos',4:'pos'} },
+  functional:    { town:55, m:{1:'pos',2:'pos',3:'pos',4:'neg'} },
+  eroded:        { town:85, m:{1:'pos',2:'neg',3:'neg',4:'neg'} },
+  retrospective: { town:10, m:{1:'neg',2:'pos',3:'pos',4:'pos'} }
+};
+
+// ── RENDER CONTROLS ────────────────────────────────────
+function renderControls() {
+  var town = S.town;
+  var tdesc = town < 33
+    ? 'Adaptive town: High absorptive capacity, civic infrastructure supports newcomers, self-reinforcing creative capital. Passion is sustained and often deepened through community recognition and contribution.'
+    : town < 67
+    ? 'Mixed town: Uneven reception — professional access may be available but social belonging remains conditional. Commitment often provisional; passion can be costly to maintain without full community validation.'
+    : 'Protective town: Low absorptive capacity, lineage-based recognition, entrenched doxa resists newcomer contribution. Passion reservoir at high risk of erosion. Exit or recalibration are likely outcomes.';
+
+  var mechsHTML = '';
+  for (var i = 1; i <= 4; i++) {
+    var mech = MECHS[i];
+    var val  = S.m[i];
+    var posCls = (val === 'pos') ? ' tp' : '';
+    var negCls = (val === 'neg') ? ' tn' : '';
+    mechsHTML += '<div class="mech-box">'
+      + '<div class="mech-head"><div class="mech-num">' + mech.num + '</div>'
+      + '<div><div class="mech-name">' + mech.name + '</div>'
+      + '<div class="mech-sub">' + mech.sub + '</div></div></div>'
+      + '<div class="mech-btns">'
+      + '<button class="tb' + posCls + '" onclick="setMech(' + i + ',\'pos\')">' + mech.pos + '</button>'
+      + '<button class="tb' + negCls + '" onclick="setMech(' + i + ',\'neg\')">' + mech.neg + '</button>'
+      + '</div></div>';
+  }
+
+  document.getElementById('controls').innerHTML =
+    '<div>'
+    + '<div class="ctrl-title">Town Pattern</div>'
+    + '<div class="town-labels"><span style="color:#0F6E56">Adaptive</span><span style="color:#7B5EA7">Mixed</span><span style="color:#993C1D">Protective</span></div>'
+    + '<input type="range" min="0" max="100" value="' + town + '" oninput="setTown(this.value)">'
+    + '<div style="font-size:9px;color:#a8a5a0;margin-top:2px">Adjust the slider to reflect the receiving community\'s character.</div>'
+    + '<div class="town-desc">' + tdesc + '</div>'
+    + '</div>'
+    + '<div>'
+    + '<div class="ctrl-title">Mechanisms — Toggle Each Lever</div>'
+    + '<div class="mech-list">' + mechsHTML + '</div>'
+    + '</div>';
+}
+
+// ── SETTERS ────────────────────────────────────────────
+function setTown(v) {
+  S.town = parseInt(v);
+  renderControls();
+  refreshMain();
+}
+
+function setMech(i, val) {
+  S.m[i] = val;
+  renderControls();
+  refreshMain();
+}
+
+// ── SCORE ──────────────────────────────────────────────
+function score() {
+  var t = S.town < 33 ? 2 : (S.town < 67 ? 0 : -2);
+  var m = 0;
+  for (var i = 1; i <= 4; i++) {
+    if (S.m[i] === 'pos') m++;
+    else if (S.m[i] === 'neg') m--;
+  }
+  return { t:t, m:m, total:t+m };
+}
+
+// ── REFRESH MAIN PANEL ─────────────────────────────────
+function refreshMain() {
+  var sc     = score();
+  var allSet = S.m[1]!==null && S.m[2]!==null && S.m[3]!==null && S.m[4]!==null;
+  var anySet = S.m[1]!==null || S.m[2]!==null || S.m[3]!==null || S.m[4]!==null;
+
+  // Reservoir
+  var pct = Math.max(5, Math.min(95, 50 + sc.total * 8));
+  document.getElementById('resBar').style.width = pct + '%';
+  document.getElementById('resBar').style.background =
+    pct >= 65 ? 'linear-gradient(to right,#5DCAA5,#0F6E56)'
+    : pct >= 40 ? 'linear-gradient(to right,#AFA9EC,#534AB7)'
+    : 'linear-gradient(to right,#F0997B,#993C1D)';
+  document.getElementById('resPct').textContent = pct + '%';
+
+  // Phase highlights
+  lit('p1a', S.m[1]==='pos');
+  lit('p1b', S.m[2]==='pos');
+  lit('p1c', S.m[1]==='pos' || S.m[2]==='pos');
+  lit('p2a', S.m[1]==='pos');
+  lit('p2b', S.m[3]==='pos');
+  lit('p2c', S.m[3]==='neg');
+  lit('p3a', S.m[4]==='pos');
+  lit('p3b', S.m[4]!==null);
+  lit('p3c', S.m[4]!==null);
+
+  // Antecedents recursive glow
+  var glow = allSet && sc.total >= 3;
+  lit('ant1', glow); lit('ant2', glow); lit('ant3', glow);
+
+  // Town pattern highlights
+  tog('tt-ad', S.town < 33);
+  tog('tt-mx', S.town >= 33 && S.town < 67);
+  tog('tt-pr', S.town >= 67);
+
+  // Mech cards
+  for (var i = 1; i <= 4; i++) {
+    var mc = document.getElementById('mc'+i);
+    mc.className = 'mc' + (S.m[i]==='pos' ? ' mp' : S.m[i]==='neg' ? ' mn' : '');
+  }
+
+  // Outcomes
+  if (!anySet) {
+    setText('oiT','—'); setText('oiB','Set levers to generate outcome.');
+    setText('ovT','—'); setText('ovB','');
+    setText('ocT','—'); setText('ocB','');
+  } else {
+    var o = outcomes(sc);
+    setText('oiT', o.i.t); setText('oiB', o.i.b);
+    setText('ovT', o.v.t); setText('ovB', o.v.b);
+    setText('ocT', o.c.t); setText('ocB', o.c.b);
+  }
+
+  // Recursive banner
+  var pill = document.getElementById('recPill');
+  if (allSet) {
+    var msg, cls, lbl;
+    if (sc.total >= 3) {
+      msg='Positive recursion: deepened embedding feeds strengthened antecedents into the next cycle. Passion for place intensifies through relational recognition.';
+      cls='rec-pill rp-pos'; lbl='Positive recursion';
+    } else if (sc.total >= 0) {
+      msg='Partial recursion: mixed outcomes leave antecedents partially renewed. The next cycle begins with conditional passion and provisional commitment.';
+      cls='rec-pill rp-part'; lbl='Partial recursion';
+    } else {
+      msg='Negative recursion: erosion of passion reservoir weakens antecedents. The next cycle begins from a depleted base — recalibration or exit become more likely.';
+      cls='rec-pill rp-neg'; lbl='Negative recursion';
+    }
+    setText('recTxt', msg);
+    pill.className = cls; pill.textContent = lbl;
+  } else {
+    setText('recTxt','Set all four levers to see how anchoring outcomes feed back to reshape the antecedents in the next cycle.');
+    pill.className=''; pill.textContent='';
+  }
+
+  // Trajectory
+  setText('trajTxt', trajectory(sc, allSet));
+}
+
+function lit(id, on) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (on) el.classList.add('lit'); else el.classList.remove('lit');
+}
+function tog(id, on) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (on) el.classList.add('active'); else el.classList.remove('active');
+}
+function setText(id, txt) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = txt;
+}
+
+function outcomes(sc) {
+  var town = S.town;
+  var i = sc.total >= 4
+    ? {t:'Deep embedding',          b:'Full social and professional belonging achieved. Passion for place deepened through relational recognition.'}
+    : sc.total >= 2
+    ? {t:'Partial embedding',       b:'Functional integration without full social belonging. Identity stable but belonging remains conditional.'}
+    : sc.total >= 0
+    ? {t:'Provisional embedding',   b:'Surface-level integration. Belonging contingent on continued performance. Exit remains a real option.'}
+    : {t:'Failed embedding / exit', b:'Passion reservoir critically depleted. Recalibration, relocation or disengagement from enterprise likely.'};
+
+  var v = S.m[3]==='pos' && sc.total >= 2
+    ? {t:'Resilience',           b:'Capital translation and community recognition combine to sustain and grow the venture.'}
+    : S.m[3]==='neg'
+    ? {t:'Strain',               b:'Capital blocked at field boundary. Venture sustainability at risk without new pathways to local traction.'}
+    : {t:'Conditional viability',b:'Venture survives but growth constrained by unresolved capital or recognition barriers.'};
+
+  var c = town < 33 && sc.total >= 2
+    ? {t:'Renewal',              b:'Adaptive town pattern amplifies CURE contribution. Town shifts through newcomer creative capital and civic engagement.'}
+    : town >= 67
+    ? {t:'Resistance',           b:'Protective pattern contains CURE impact. Community continuity preserved; renewal opportunities foregone.'}
+    : {t:'Selective integration',b:'Mixed town pattern produces uneven outcomes. Some CURE contributions absorbed, others resisted.'};
+
+  return {i:i, v:v, c:c};
+}
+
+function trajectory(sc, allSet) {
+  if (!allSet) return 'Adjust the levers to see how the embedding trajectory changes — or load an archetype above.';
+  var tname = S.town < 33 ? 'adaptive' : (S.town < 67 ? 'mixed' : 'protective');
+  var pull  = S.m[1]==='pos' ? 'strong affective pull'          : 'weak affective pull';
+  var sym   = S.m[2]==='pos' ? 'sustained symbolic validation'  : 'eroding symbolic validation';
+  var cap   = S.m[3]==='pos' ? 'successful capital translation' : 'blocked capital translation';
+  var rec   = S.m[4]==='pos' ? 'positive community recognition' : 'gatekept recognition';
+  var traj  = sc.total >= 3  ? 'deep embedding trajectory'
+              : sc.total >= 0 ? 'partial embedding trajectory'
+              : 'exit or recalibration trajectory';
+  var tail  = sc.total >= 2
+    ? 'The passion reservoir is sufficiently replenished to sustain a second cycle with stronger antecedents.'
+    : sc.total >= 0
+    ? 'The passion reservoir is partially maintained but second-cycle antecedents are weakened.'
+    : 'The passion reservoir is critically depleted, making sustained entrepreneurial engagement increasingly unlikely without significant change.';
+  return 'In a ' + tname + ' town, ' + pull + ' combined with ' + sym + ', ' + cap + ' and ' + rec + ' produces a ' + traj + '. ' + tail;
+}
+
+// ── ARCHETYPES ─────────────────────────────────────────
+function loadArchetype(name, btn) {
+  document.querySelectorAll('.arch-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  var a = ARCHETYPES[name];
+  S.town = a.town;
+  S.m[1] = a.m[1]; S.m[2] = a.m[2]; S.m[3] = a.m[3]; S.m[4] = a.m[4];
+  renderControls();
+  refreshMain();
+}
+
+function resetAll() {
+  document.querySelectorAll('.arch-btn').forEach(function(b){ b.classList.remove('active'); });
+  S.town = 50;
+  S.m = {1:null,2:null,3:null,4:null};
+  renderControls();
+  refreshMain();
+}
+
+// ── INIT ───────────────────────────────────────────────
+renderControls();
+refreshMain();
+</script>
+</body>
+</html>
